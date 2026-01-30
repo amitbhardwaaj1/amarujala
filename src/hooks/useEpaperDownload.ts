@@ -6,6 +6,8 @@ interface DownloadState {
   pages: string[];
   progress: number;
   totalPages: number;
+  city: string;
+  date: string;
 }
 
 export function useEpaperDownload() {
@@ -14,10 +16,12 @@ export function useEpaperDownload() {
     pages: [],
     progress: 0,
     totalPages: 0,
+    city: "",
+    date: "",
   });
 
   const download = useCallback(async (city: string, date: string, paperType: string) => {
-    setState({ isLoading: true, pages: [], progress: 0, totalPages: 0 });
+    setState({ isLoading: true, pages: [], progress: 0, totalPages: 0, city, date });
 
     const [year, month, day] = date.split("-");
 
@@ -60,7 +64,7 @@ export function useEpaperDownload() {
         setState((s) => ({ ...s, progress: i }));
       }
 
-      setState({ isLoading: false, pages: images, progress: totalPage, totalPages: totalPage });
+      setState({ isLoading: false, pages: images, progress: totalPage, totalPages: totalPage, city, date });
 
       toast({
         title: "E-Paper Loaded! 📰",
@@ -68,7 +72,7 @@ export function useEpaperDownload() {
       });
     } catch (error) {
       console.error("Download error:", error);
-      setState({ isLoading: false, pages: [], progress: 0, totalPages: 0 });
+      setState({ isLoading: false, pages: [], progress: 0, totalPages: 0, city: "", date: "" });
 
       toast({
         title: "Download Failed",
@@ -79,7 +83,7 @@ export function useEpaperDownload() {
   }, []);
 
   const reset = useCallback(() => {
-    setState({ isLoading: false, pages: [], progress: 0, totalPages: 0 });
+    setState({ isLoading: false, pages: [], progress: 0, totalPages: 0, city: "", date: "" });
   }, []);
 
   return {

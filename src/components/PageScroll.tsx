@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useDrag } from "@use-gesture/react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -9,6 +11,8 @@ import {
   Rows3,
   Columns3,
   Hash,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,22 +21,79 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { toast } from "@/hooks/use-toast";
 
 interface PageScrollProps {
   pages: string[];
   onBack: () => void;
+  city?: string;
+  date?: string;
 }
 
 type ScrollMode = "vertical" | "horizontal";
 
-export function PageScroll({ pages, onBack }: PageScrollProps) {
+export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [scrollMode, setScrollMode] = useState<ScrollMode>("vertical");
   const [jumpToPage, setJumpToPage] = useState("");
   const [isJumpOpen, setIsJumpOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const horizontalRef = useRef<HTMLDivElement>(null);
+
+  // Download all pages as ZIP
+  const handleDownloadZip = async () => {
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("epaper");
+
+      if (!folder) throw new Error("Failed to create folder");
+
+      // Convert each page HTML to an image and add to zip
+      for (let i = 0; i < pages.length; i++) {
+        const pageContent = pages[i];
+        
+        // Create HTML file for each page
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Page ${i + 1}</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #fff; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  ${pageContent}
+</body>
+</html>`;
+        
+        folder.file(`page-${String(i + 1).padStart(2, "0")}.html`, htmlContent);
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const fileName = `amar-ujala-${city || "epaper"}-${date || new Date().toISOString().split("T")[0]}.zip`;
+      saveAs(content, fileName);
+
+      toast({
+        title: "Download Complete! 📦",
+        description: `${pages.length} pages saved as ZIP`,
+      });
+    } catch (error) {
+      console.error("ZIP creation failed:", error);
+      toast({
+        title: "Download Failed",
+        description: "Could not create ZIP file",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.25, 2));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
@@ -191,6 +252,22 @@ export function PageScroll({ pages, onBack }: PageScrollProps) {
                 <Columns3 className="w-4 h-4" />
               ) : (
                 <Rows3 className="w-4 h-4" />
+              )}
+            </Button>
+
+            {/* Download ZIP */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDownloadZip}
+              disabled={isDownloading}
+              className="text-foreground hover:bg-muted h-9 w-9"
+              title="Download as ZIP"
+            >
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 spinner" />
+              ) : (
+                <Download className="w-4 h-4" />
               )}
             </Button>
           </div>
