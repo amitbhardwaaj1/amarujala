@@ -6,7 +6,7 @@ import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { useEpaperDownload } from "@/hooks/useEpaperDownload";
 
 const Index = () => {
-  const { isLoading, pages, progress, totalPages, download, reset } = useEpaperDownload();
+  const { isLoading, pages, progress, totalPages, city, date, download, reset } = useEpaperDownload();
 
   const handleDownload = (city: string, date: string, paperType: string) => {
     download(city, date, paperType);
@@ -20,7 +20,7 @@ const Index = () => {
   if (pages.length > 0) {
     return (
       <>
-        <PageScroll pages={pages} onBack={handleBack} />
+        <PageScroll pages={pages} onBack={handleBack} city={city} date={date} />
         {isLoading && totalPages > 0 && (
           <LoadingOverlay progress={progress} totalPages={totalPages} />
         )}
