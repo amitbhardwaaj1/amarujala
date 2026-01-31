@@ -9,10 +9,10 @@ import { useEpaperDownload } from "@/hooks/useEpaperDownload";
 
 const Index = () => {
   const [selectedPaper, setSelectedPaper] = useState("amarujala");
-  const { isLoading, pages, progress, totalPages, city, date, download, reset } = useEpaperDownload();
+  const { isLoading, pages, progress, totalPages, city, date, newspaper, download, reset } = useEpaperDownload();
 
   const handleDownload = (city: string, date: string, paperType: string) => {
-    download(city, date, paperType);
+    download(city, date, paperType, selectedPaper);
   };
 
   const handleBack = () => {
@@ -23,7 +23,7 @@ const Index = () => {
   if (pages.length > 0) {
     return (
       <>
-        <PageScroll pages={pages} onBack={handleBack} city={city} date={date} />
+        <PageScroll pages={pages} onBack={handleBack} city={city} date={date} newspaper={newspaper} />
         {isLoading && totalPages > 0 && (
           <LoadingOverlay progress={progress} totalPages={totalPages} />
         )}
@@ -43,7 +43,7 @@ const Index = () => {
               Select your city and date to download your daily newspaper
             </p>
           </div>
-          <DownloadForm onDownload={handleDownload} isLoading={isLoading} />
+          <DownloadForm onDownload={handleDownload} isLoading={isLoading} selectedPaper={selectedPaper} />
         </div>
       </main>
 
