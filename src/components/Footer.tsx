@@ -4,10 +4,13 @@ export function Footer() {
   return (
     <footer className="w-full py-6 mt-auto">
       <div className="text-center text-sm text-muted-foreground">
-        <p className="flex items-center justify-center gap-1">
-          © 2025 Amar Ujala Downloader • Developed with
-          <Heart className="w-3.5 h-3.5 text-primary fill-primary" />
-          by Amit
+        <p className="flex items-center justify-center gap-1 flex-wrap">
+          <span>© 2025 Amar Ujala Downloader</span>
+          <span className="flex items-center gap-1">
+            • Developed with
+            <Heart className="w-3.5 h-3.5 text-primary fill-primary" />
+            by Amit
+          </span>
         </p>
       </div>
     </footer>
