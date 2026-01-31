@@ -65,11 +65,6 @@ export function useEpaperDownload() {
       }
 
       setState({ isLoading: false, pages: images, progress: totalPage, totalPages: totalPage, city, date });
-
-      toast({
-        title: "E-Paper Loaded! 📰",
-        description: `Successfully loaded ${totalPage} pages`,
-      });
     } catch (error) {
       console.error("Download error:", error);
       setState({ isLoading: false, pages: [], progress: 0, totalPages: 0, city: "", date: "" });
