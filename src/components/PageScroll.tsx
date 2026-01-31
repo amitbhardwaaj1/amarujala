@@ -27,12 +27,11 @@ interface PageScrollProps {
   onBack: () => void;
   city?: string;
   date?: string;
-  newspaper?: string;
 }
 
 type ScrollMode = "vertical" | "horizontal";
 
-export function PageScroll({ pages, onBack, city, date, newspaper }: PageScrollProps) {
+export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [scrollMode, setScrollMode] = useState<ScrollMode>("vertical");
@@ -100,8 +99,7 @@ export function PageScroll({ pages, onBack, city, date, newspaper }: PageScrollP
         }
       }
 
-      const paperName = newspaper || "epaper";
-      const fileName = `${paperName}-${city || "edition"}-${date || new Date().toISOString().split("T")[0]}.pdf`;
+      const fileName = `amar-ujala-${city || "epaper"}-${date || new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
 
       toast({
