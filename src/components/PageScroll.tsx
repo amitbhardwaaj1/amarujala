@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useDrag } from "@use-gesture/react";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import { jsPDF } from "jspdf";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -42,52 +41,76 @@ export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const horizontalRef = useRef<HTMLDivElement>(null);
 
-  // Download all pages as ZIP
-  const handleDownloadZip = async () => {
+  // Download all pages as PDF
+  const handleDownloadPdf = async () => {
     setIsDownloading(true);
     try {
-      const zip = new JSZip();
-      const folder = zip.folder("epaper");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-      if (!folder) throw new Error("Failed to create folder");
-
-      // Convert each page HTML to an image and add to zip
       for (let i = 0; i < pages.length; i++) {
-        const pageContent = pages[i];
+        if (i > 0) pdf.addPage();
+
+        // Extract image src from HTML content
+        const imgMatch = pages[i].match(/src=["']([^"']+)["']/);
         
-        // Create HTML file for each page
-        const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Page ${i + 1}</title>
-  <style>
-    body { margin: 0; padding: 20px; background: #fff; }
-    img { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-  ${pageContent}
-</body>
-</html>`;
-        
-        folder.file(`page-${String(i + 1).padStart(2, "0")}.html`, htmlContent);
+        if (imgMatch && imgMatch[1]) {
+          const imgSrc = imgMatch[1];
+          
+          // Load image and add to PDF
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext("2d");
+              
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const imgData = canvas.toDataURL("image/jpeg", 0.9);
+                
+                // Calculate dimensions to fit page
+                const imgRatio = img.width / img.height;
+                const pageRatio = pageWidth / pageHeight;
+                
+                let finalWidth = pageWidth;
+                let finalHeight = pageHeight;
+                
+                if (imgRatio > pageRatio) {
+                  finalHeight = pageWidth / imgRatio;
+                } else {
+                  finalWidth = pageHeight * imgRatio;
+                }
+                
+                const x = (pageWidth - finalWidth) / 2;
+                const y = (pageHeight - finalHeight) / 2;
+                
+                pdf.addImage(imgData, "JPEG", x, y, finalWidth, finalHeight);
+              }
+              resolve();
+            };
+            img.onerror = () => reject(new Error(`Failed to load image for page ${i + 1}`));
+            img.src = imgSrc;
+          });
+        }
       }
 
-      const content = await zip.generateAsync({ type: "blob" });
-      const fileName = `amar-ujala-${city || "epaper"}-${date || new Date().toISOString().split("T")[0]}.zip`;
-      saveAs(content, fileName);
+      const fileName = `amar-ujala-${city || "epaper"}-${date || new Date().toISOString().split("T")[0]}.pdf`;
+      pdf.save(fileName);
 
       toast({
-        title: "Download Complete! 📦",
-        description: `${pages.length} pages saved as ZIP`,
+        title: "Download Complete! 📄",
+        description: `${pages.length} pages saved as PDF`,
       });
     } catch (error) {
-      console.error("ZIP creation failed:", error);
+      console.error("PDF creation failed:", error);
       toast({
         title: "Download Failed",
-        description: "Could not create ZIP file",
+        description: "Could not create PDF file",
         variant: "destructive",
       });
     } finally {
@@ -255,14 +278,14 @@ export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
               )}
             </Button>
 
-            {/* Download ZIP */}
+            {/* Download PDF */}
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleDownloadZip}
+              onClick={handleDownloadPdf}
               disabled={isDownloading}
               className="text-foreground hover:bg-muted h-9 w-9"
-              title="Download as ZIP"
+              title="Download as PDF"
             >
               {isDownloading ? (
                 <Loader2 className="w-4 h-4 spinner" />
