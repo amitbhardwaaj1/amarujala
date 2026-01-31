@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DownloadForm } from "@/components/DownloadForm";
 import { PageScroll } from "@/components/PageScroll";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { NewspaperSwitcher } from "@/components/NewspaperSwitcher";
 import { useEpaperDownload } from "@/hooks/useEpaperDownload";
 
 const Index = () => {
+  const [selectedPaper, setSelectedPaper] = useState("amarujala");
   const { isLoading, pages, progress, totalPages, city, date, download, reset } = useEpaperDownload();
 
   const handleDownload = (city: string, date: string, paperType: string) => {
@@ -30,7 +33,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <NewspaperSwitcher selectedPaper={selectedPaper} onSelect={setSelectedPaper} />
+      <Header selectedPaper={selectedPaper} />
 
       <main className="flex-1 py-8 px-4">
         <div className="animate-fade-up">
