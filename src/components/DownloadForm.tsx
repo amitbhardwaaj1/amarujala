@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Calendar, MapPin, FileText, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,15 +8,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getOrderedCities, citiesData } from "@/data/cities";
+import { getOrderedCities, getNewspaperById } from "@/data/newspapers";
 
 interface DownloadFormProps {
   onDownload: (city: string, date: string, paperType: string) => void;
   isLoading: boolean;
+  selectedPaper: string;
 }
 
-export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
-  const cities = useMemo(() => getOrderedCities(), []);
+export function DownloadForm({ onDownload, isLoading, selectedPaper }: DownloadFormProps) {
+  const newspaper = useMemo(() => getNewspaperById(selectedPaper), [selectedPaper]);
+  const cities = useMemo(() => newspaper ? getOrderedCities(newspaper) : [], [newspaper]);
+  
   const [selectedCity, setSelectedCity] = useState(cities[0]?.slug || "");
   const [paperType, setPaperType] = useState("main");
   const [date, setDate] = useState(() => {
@@ -24,10 +27,19 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
     return today.toISOString().split("T")[0];
   });
 
+  // Reset city when newspaper changes
+  useEffect(() => {
+    if (cities.length > 0) {
+      setSelectedCity(cities[0].slug);
+      setPaperType("main");
+    }
+  }, [selectedPaper, cities]);
+
   const hasMycity = useMemo(() => {
-    const city = citiesData[selectedCity];
+    if (!newspaper) return false;
+    const city = newspaper.cities[selectedCity];
     return city?.is_mycity === "Y";
-  }, [selectedCity]);
+  }, [selectedCity, newspaper]);
 
   const handleCityChange = (value: string) => {
     setSelectedCity(value);
