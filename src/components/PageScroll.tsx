@@ -21,17 +21,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
+import { NewspaperId, newspapers } from "@/data/newspapers";
 
 interface PageScrollProps {
   pages: string[];
   onBack: () => void;
   city?: string;
   date?: string;
+  newspaper?: NewspaperId;
 }
 
 type ScrollMode = "vertical" | "horizontal";
 
-export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
+export function PageScroll({ pages, onBack, city, date, newspaper = "amar-ujala" }: PageScrollProps) {
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [scrollMode, setScrollMode] = useState<ScrollMode>("vertical");
@@ -99,7 +101,8 @@ export function PageScroll({ pages, onBack, city, date }: PageScrollProps) {
         }
       }
 
-      const fileName = `amar-ujala-${city || "epaper"}-${date || new Date().toISOString().split("T")[0]}.pdf`;
+      const paperName = newspapers[newspaper]?.id || "epaper";
+      const fileName = `${paperName}-${city || "edition"}-${date || new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
 
       toast({
