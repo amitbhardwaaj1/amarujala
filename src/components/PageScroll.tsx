@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useDrag } from "@use-gesture/react";
 import { jsPDF } from "jspdf";
 import {
@@ -42,6 +42,23 @@ export function PageScroll({ pages, onBack, city, date, newspaper = "amar-ujala"
   const [isDownloading, setIsDownloading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const horizontalRef = useRef<HTMLDivElement>(null);
+
+  // Handle browser back button - push state when component mounts
+  useEffect(() => {
+    // Push a state so back button doesn't close the window
+    window.history.pushState({ viewingPages: true }, "");
+
+    const handlePopState = (event: PopStateEvent) => {
+      // User pressed back button, go back to form
+      onBack();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [onBack]);
 
   // Download all pages as PDF
   const handleDownloadPdf = async () => {
