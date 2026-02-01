@@ -4,12 +4,20 @@ import { DownloadForm } from "@/components/DownloadForm";
 import { PageScroll } from "@/components/PageScroll";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { useEpaperDownload } from "@/hooks/useEpaperDownload";
+import { NewspaperId } from "@/data/newspapers";
 
 const Index = () => {
-  const { isLoading, pages, progress, totalPages, city, date, download, reset } = useEpaperDownload();
+  const { isLoading, pages, progress, totalPages, city, date, newspaper, download, reset } = useEpaperDownload();
 
-  const handleDownload = (city: string, date: string, paperType: string) => {
-    download(city, date, paperType);
+  const handleDownload = (
+    newspaper: NewspaperId,
+    city: string,
+    date: string,
+    paperType?: string,
+    state?: string,
+    subCity?: string
+  ) => {
+    download(newspaper, city, date, paperType, state, subCity);
   };
 
   const handleBack = () => {
@@ -20,7 +28,7 @@ const Index = () => {
   if (pages.length > 0) {
     return (
       <>
-        <PageScroll pages={pages} onBack={handleBack} city={city} date={date} />
+        <PageScroll pages={pages} onBack={handleBack} city={city} date={date} newspaper={newspaper} />
         {isLoading && totalPages > 0 && (
           <LoadingOverlay progress={progress} totalPages={totalPages} />
         )}
@@ -30,7 +38,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header onPaperChange={reset} />
 
       <main className="flex-1 py-8 px-4">
         <div className="animate-fade-up">
