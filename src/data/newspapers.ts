@@ -1,6 +1,6 @@
 // Newspaper configuration with branding, cities, and API details
 
-export type NewspaperId = "amar-ujala" | "dainik-jagran" | "hindustan-times" | "times-of-india";
+export type NewspaperId = "amar-ujala" | "dainik-jagran" | "hindustan-times" | "times-of-india" | "hindustan";
 
 export interface NewspaperConfig {
   id: NewspaperId;
@@ -56,6 +56,17 @@ export const newspapers: Record<NewspaperId, NewspaperConfig> = {
     accentColor: "45 100% 50%",
     hasStates: false,
     hasDynamicCities: false,
+    hasSubEditions: false,
+    hasPaperType: false,
+  },
+  "hindustan": {
+    id: "hindustan",
+    name: "Hindustan",
+    shortName: "HTN",
+    primaryColor: "196 100% 50%",
+    accentColor: "200 85% 60%",
+    hasStates: true,
+    hasDynamicCities: true,
     hasSubEditions: false,
     hasPaperType: false,
   },
