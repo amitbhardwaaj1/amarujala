@@ -18,6 +18,7 @@ const API_ENDPOINTS = {
   "dainik-jagran": "https://d3f65smzvvdjuh.cloudfront.net/dev/v1/download",
   "hindustan-times": "https://d2pntrmx20f4jl.cloudfront.net/dev/v1/download",
   "times-of-india": "https://d3a2dhpjvvj5q1.cloudfront.net/dev/v1/download",
+  "hindustan": "https://d2it98gl4vzgmi.cloudfront.net/dev/v1/download",
 };
 
 export function useEpaperDownload() {
@@ -168,6 +169,34 @@ export function useEpaperDownload() {
             }
             setState((s) => ({ ...s, progress: i }));
           }
+        } else if (newspaper === "hindustan") {
+          // Hindustan - GET, single response with formatted date
+          const formattedDate = `${day}/${month}/${year}`;
+
+          const response = await fetch(
+            `${API_ENDPOINTS["hindustan"]}?editionId=${city}&editionDate=${formattedDate}`,
+            { method: "GET", headers: { "Content-Type": "application/json" } }
+          );
+          const data = await response.json();
+
+          if (data?.data?.htmlContent) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = data.data.htmlContent;
+            const pageImages = tempDiv.querySelectorAll("img");
+
+            if (pageImages.length > 0) {
+              pageImages.forEach((img, idx) => {
+                images.push(`<img src="${img.src}" alt="Page ${idx + 1}" style="width:100%;" />`);
+              });
+              totalPage = images.length;
+            } else {
+              images.push(data.data.htmlContent);
+              totalPage = 1;
+            }
+          } else {
+            throw new Error("No data returned from the API.");
+          }
+          setState((s) => ({ ...s, progress: totalPage, totalPages: totalPage }));
         }
 
         setState({ isLoading: false, pages: images, progress: totalPage, totalPages: totalPage, city, date, newspaper });

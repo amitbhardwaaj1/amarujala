@@ -20,6 +20,17 @@ interface HTEdition {
   Supplement?: { EditionId: number; EditionDisplayName: string }[];
 }
 
+interface HindustanState {
+  LocationId: number;
+  OrgLocation: string;
+  editionlocation: {
+    edition: {
+      EditionId: number;
+      EditionDisplayName: string;
+    }[];
+  }[];
+}
+
 interface DownloadFormProps {
   onDownload: (
     newspaper: NewspaperId,
@@ -55,6 +66,12 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
   const [htCity, setHtCity] = useState("");
   const [htSubCity, setHtSubCity] = useState("");
   const [htLoading, setHtLoading] = useState(false);
+
+  // Hindustan state (dynamic with states)
+  const [hindustanStates, setHindustanStates] = useState<HindustanState[]>([]);
+  const [hindustanState, setHindustanState] = useState("");
+  const [hindustanCity, setHindustanCity] = useState("");
+  const [hindustanLoading, setHindustanLoading] = useState(false);
 
   // Common date
   const [date, setDate] = useState(() => {
@@ -104,6 +121,36 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
     }
   }, [currentPaper.id, date]);
 
+  // Fetch Hindustan states when switching to Hindustan
+  useEffect(() => {
+    if (currentPaper.id === "hindustan") {
+      const fetchHindustanStates = async () => {
+        setHindustanLoading(true);
+        try {
+          const res = await fetch(
+            `https://epaper.livehindustan.com/Home/GetEditionsHierarchy`,
+            { method: "GET", headers: { "Content-Type": "application/json" } }
+          );
+          const data = await res.json();
+          setHindustanStates(data || []);
+
+          if (data && data.length > 0) {
+            setHindustanState(String(data[0].LocationId));
+            if (data[0].editionlocation && data[0].editionlocation.length > 0 && data[0].editionlocation[0].edition && data[0].editionlocation[0].edition.length > 0) {
+              setHindustanCity(String(data[0].editionlocation[0].edition[0].EditionId));
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch Hindustan states:", error);
+          setHindustanStates([]);
+        } finally {
+          setHindustanLoading(false);
+        }
+      };
+      fetchHindustanStates();
+    }
+  }, [currentPaper.id]);
+
   // Update HT sub-cities when city changes
   const htSubCities = useMemo(() => {
     const edition = htEditions.find((e) => String(e.EditionId) === htCity);
@@ -115,6 +162,16 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
       setHtSubCity(String(htSubCities[0].EditionId));
     }
   }, [htSubCities, htSubCity]);
+
+  // Update Hindustan cities when state changes
+  useEffect(() => {
+    if (hindustanState && hindustanStates.length > 0) {
+      const stateData = hindustanStates.find((s) => String(s.LocationId) === hindustanState);
+      if (stateData && stateData.editionlocation && stateData.editionlocation.length > 0 && stateData.editionlocation[0].edition && stateData.editionlocation[0].edition.length > 0) {
+        setHindustanCity(String(stateData.editionlocation[0].edition[0].EditionId));
+      }
+    }
+  }, [hindustanState, hindustanStates]);
 
   const hasMycity = useMemo(() => {
     const city = citiesData[amarCity];
@@ -138,6 +195,8 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
       onDownload(currentPaper.id, htCity, date, undefined, undefined, htSubCity);
     } else if (currentPaper.id === "times-of-india") {
       onDownload(currentPaper.id, toiCity, date);
+    } else if (currentPaper.id === "hindustan") {
+      onDownload(currentPaper.id, hindustanCity, date);
     }
   };
 
@@ -302,6 +361,52 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
           </div>
         )}
 
+        {/* Hindustan Form */}
+        {currentPaper.id === "hindustan" && (
+          <>
+            <div className="space-y-2 mb-5">
+              <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Building2 className="w-4 h-4" />
+                Select State
+              </label>
+              <Select value={hindustanState} onValueChange={(v) => { setHindustanState(v); setHindustanCity(""); }} disabled={hindustanLoading}>
+                <SelectTrigger className="w-full h-12 bg-input border-border text-foreground">
+                  <SelectValue placeholder={hindustanLoading ? "Loading..." : "Choose state"} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border max-h-64">
+                  {hindustanStates.map((state) => (
+                    <SelectItem key={state.LocationId} value={String(state.LocationId)} className="text-foreground hover:bg-muted focus:bg-muted">
+                      {state.OrgLocation}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 mb-5">
+              <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <MapPin className="w-4 h-4" />
+                Select City
+              </label>
+              <Select value={hindustanCity} onValueChange={setHindustanCity} disabled={hindustanLoading}>
+                <SelectTrigger className="w-full h-12 bg-input border-border text-foreground">
+                  <SelectValue placeholder={hindustanLoading ? "Loading..." : "Choose city"} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border max-h-64">
+                  {hindustanStates
+                    .find((s) => String(s.LocationId) === hindustanState)
+                    ?.editionlocation.flatMap((el) => el.edition)
+                    .map((edition) => (
+                      <SelectItem key={edition.EditionId} value={String(edition.EditionId)} className="text-foreground hover:bg-muted focus:bg-muted">
+                        {edition.EditionDisplayName}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
         {/* Date Picker - Common */}
         <div className="space-y-2 mb-6">
           <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -320,7 +425,7 @@ export function DownloadForm({ onDownload, isLoading }: DownloadFormProps) {
         {/* Download Button */}
         <Button
           type="submit"
-          disabled={isLoading || !date || (currentPaper.id === "hindustan-times" && htLoading)}
+          disabled={isLoading || !date || (currentPaper.id === "hindustan-times" && htLoading) || (currentPaper.id === "hindustan" && hindustanLoading)}
           className="w-full h-14 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground glow-primary transition-all duration-300 disabled:opacity-50"
         >
           {isLoading ? (
